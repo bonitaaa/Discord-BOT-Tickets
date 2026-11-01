@@ -1534,11 +1534,18 @@ async function ensureTicketPanel(guild) {
   let message = guildData.ticketPanelMessageId
     ? await channel.messages.fetch(guildData.ticketPanelMessageId).catch(() => null)
     : null;
-  if (message && !message.flags.has(MessageFlags.IsComponentsV2)) {
-    await message.delete().catch(console.error);
-    message = null;
+  if (!message) {
+    const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    message = recent?.find((candidate) => (
+      candidate.author.id === guild.client.user.id
+      && JSON.stringify(candidate.components).includes(TICKET_SELECT_ID)
+    )) ?? null;
+    if (message) guildData.ticketPanelMessageId = message.id;
   }
-  if (message) await message.edit(ticketPanelMessage());
+  if (message) {
+    await message.edit(ticketPanelMessage())
+      .catch((error) => console.error(`Impossible de modifier le panneau tickets permanent ${message.id}:`, error));
+  }
   else {
     message = await channel.send(ticketPanelMessage());
     guildData.ticketPanelMessageId = message.id;

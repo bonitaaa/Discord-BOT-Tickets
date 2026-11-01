@@ -659,13 +659,10 @@ async function upsertImage(channel, messageId, image, filename, components = [])
   if (messageId) {
     const existing = await channel.messages.fetch(messageId).catch(() => null);
     if (existing) {
-      if (existing.author.id !== channel.client.user.id
-        || existing.flags.has(MessageFlags.IsComponentsV2)) {
-        await existing.delete().catch(() => null);
-      } else {
-        await existing.edit({ content: null, components, attachments: [], files: [{ attachment: image, name: filename }] });
-        return existing.id;
-      }
+      if (existing.author.id !== channel.client.user.id) return existing.id;
+      await existing.edit({ content: null, components, attachments: [], files: [{ attachment: image, name: filename }] })
+        .catch((error) => console.error(`Impossible de modifier le panneau permanent ${existing.id}:`, error));
+      return existing.id;
     }
   }
   const created = await channel.send({ components, files: [{ attachment: image, name: filename }] });
@@ -1095,6 +1092,13 @@ async function updateCandyPanel(guild) {
   const guildData = getGuildData(guild.id);
   const candy = ensureCandyStats(guildData);
   const values = candy.counts;
+  if (!candy.panelMessageId) {
+    const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    candy.panelMessageId = recent?.find((message) => (
+      message.author.id === guild.client.user.id
+      && message.attachments.some((attachment) => attachment.name === 'classement-flocons.png')
+    ))?.id ?? null;
+  }
   const image = await renderCandyLeaderboardImage(guild, values);
   candy.panelMessageId = await upsertImage(
     channel,
@@ -1346,10 +1350,12 @@ async function updateGuildPanels(guild) {
     formatter: (value) => `${value} msg`,
     totalLabel: 'Messages',
   });
-  if (stats.messageIds.voice) {
-    const oldVoiceMessage = await channel.messages.fetch(stats.messageIds.voice).catch(() => null);
-    await oldVoiceMessage?.delete().catch(() => null);
-    stats.messageIds.voice = null;
+  if (!stats.messageIds.text) {
+    const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    stats.messageIds.text = recent?.find((message) => (
+      message.author.id === guild.client.user.id
+      && message.attachments.some((attachment) => attachment.name === 'classement-messages.png')
+    ))?.id ?? null;
   }
   stats.messageIds.text = await upsertImage(
     channel,
