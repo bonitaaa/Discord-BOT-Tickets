@@ -316,9 +316,6 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const joinedMonths = member?.joinedTimestamp
     ? Math.max(0, Math.floor((Date.now() - member.joinedTimestamp) / (30.44 * 24 * 60 * 60 * 1000)))
     : 0;
-  const accountMonths = user?.createdTimestamp
-    ? Math.max(0, Math.floor((Date.now() - user.createdTimestamp) / (30.44 * 24 * 60 * 60 * 1000)))
-    : 0;
   const rank = claimed ? 'STAFF' : 'MEMBRE';
   const rating = Number(stats.rating ?? 0);
   const ratingLabel = rating > 0 ? rating.toFixed(1) : '—';
@@ -327,10 +324,10 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const previousMilestone = [...milestones].reverse().find((milestone) => milestone <= count) ?? 0;
   const progressRatio = Math.min(1, Math.max(0, (count - previousMilestone) / (nextMilestone - previousMilestone)));
   const progressWidth = Math.max(8, Math.round(1020 * progressRatio));
-  const middleValue = claimed ? ratingLabel : `${joinedMonths} mois`;
-  const middleLabel = claimed ? 'NOTE MOYENNE' : 'ANCIENNETÉ SERVEUR';
-  const lastValue = claimed ? response : `${accountMonths} mois`;
-  const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ÂGE DU COMPTE';
+  const middleValue = claimed ? ratingLabel : Number(stats.vouchesGiven ?? 0);
+  const middleLabel = claimed ? 'NOTE MOYENNE' : 'VOUCHES DONNÉS';
+  const lastValue = claimed ? response : `${joinedMonths} mois`;
+  const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ANCIENNETÉ';
   const status = claimed ? 'PRIS EN CHARGE' : 'NOUVEAU TICKET';
   const ticketTag = claimed ? 'STAFF' : 'SUPPORT';
   const rankTagWidth = claimed ? 132 : 148;
@@ -364,7 +361,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
     <text x="245" y="132" fill="#fff" font-size="43" font-weight="950" letter-spacing="-.5">${name}</text>
     <rect x="245" y="150" width="${rankTagWidth}" height="32" rx="16" fill="#3b2b09" stroke="#f6c936" stroke-opacity=".48"/><circle cx="263" cy="166" r="4" fill="#ffd652"/><text x="279" y="171" fill="#ffd652" font-size="13" font-weight="950" letter-spacing=".7">${rank}</text>
     <g transform="translate(245 214)">
-      <text x="0" y="0" fill="#fff" font-size="37" font-weight="950">${count}</text><text x="0" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">TICKETS ${claimed ? 'PRIS' : 'CRÉÉS'}</text>
+      <text x="0" y="0" fill="#fff" font-size="37" font-weight="950">${count}</text><text x="0" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${claimed ? 'TICKETS PRIS' : 'DEALS'}</text>
       <line x1="205" y1="-35" x2="205" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
       <text x="250" y="0" fill="${claimed ? '#ffd84b' : '#fff'}" font-size="37" font-weight="950">${escapeXml(middleValue)}</text><text x="250" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${middleLabel}</text>
       <line x1="505" y1="-35" x2="505" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>

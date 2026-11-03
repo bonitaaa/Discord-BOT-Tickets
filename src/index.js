@@ -1674,7 +1674,10 @@ async function ticketWelcomeMessage(guild, ticket, includeFlags = true, renderCa
         guild,
         ticket.ownerId,
         { ...ticket, claimedBy: null },
-        { created: ticket.createdCount ?? ticket.stats?.created ?? 1 },
+        {
+          created: ticket.createdCount ?? ticket.stats?.created ?? 1,
+          vouchesGiven: ticket.vouchesGiven ?? ticket.stats?.vouchesGiven ?? 0,
+        },
       ),
       name: 'ticket-card.png',
     }];
@@ -1897,7 +1900,10 @@ async function handleTicketSelect(interaction) {
   guildData.ticketStats ??= { created: {}, claimed: {}, ratings: {}, ratedTickets: {} };
   guildData.ticketStats.created[member.id] = (guildData.ticketStats.created[member.id] ?? 0) + 1;
   ticket.createdCount = guildData.ticketStats.created[member.id];
-  ticket.stats = { created: ticket.createdCount };
+  ticket.vouchesGiven = Object.values(guildData.ticketStats.ratedTickets ?? {})
+    .filter((entry) => entry?.ownerId === member.id)
+    .length;
+  ticket.stats = { created: ticket.createdCount, vouchesGiven: ticket.vouchesGiven };
   guildData.tickets[channel.id] = ticket;
   await saveStore();
   const welcome = await channel.send(await ticketWelcomeMessage(interaction.guild, ticket));
