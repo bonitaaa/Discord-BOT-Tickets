@@ -20,6 +20,9 @@ const PARIS_TIME_ZONE = 'Europe/Paris';
 const INTER_FONT_DATA = readFileSync(
   new URL('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2', import.meta.url),
 ).toString('base64');
+const TICKET_CARD_BACKGROUND_DATA = readFileSync(
+  new URL('../assets/ticket-card-grunge.png', import.meta.url),
+).toString('base64');
 const CANDY_ICON_DATA = Buffer.from(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
     <defs>
@@ -350,14 +353,10 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
       <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity=".65"/></filter>
     </defs>
     <g clip-path="url(#card)">
-      <rect width="1200" height="380" fill="url(#bg)"/>
-      <ellipse cx="950" cy="160" rx="470" ry="330" fill="url(#glow)"/>
-      <path d="M0 0H480L355 45L510 68L365 105L510 132L320 165L450 207L300 238L430 280L250 310L330 380H0Z" fill="#c80c20" opacity=".10"/>
-      <path d="M1200 32L1060 77L1175 102L1010 151L1150 176L985 235L1188 268L1045 323L1200 350Z" fill="#ff1730" opacity=".12"/>
-      <rect width="1200" height="380" fill="url(#grain)"/>
-      <path d="M880 57L922 108L973 84L1004 132L1065 60L1045 166H897Z" fill="none" stroke="#ff1830" stroke-width="8" opacity=".14"/>
-      <rect x="0" y="0" width="1200" height="7" fill="url(#red)"/>
-      <rect x="0" y="373" width="1200" height="7" fill="url(#red)"/>
+      <image href="data:image/png;base64,${TICKET_CARD_BACKGROUND_DATA}" x="0" y="0" width="1200" height="380" preserveAspectRatio="xMidYMid slice"/>
+      <rect width="1200" height="380" fill="#05060a" opacity=".20"/>
+      <linearGradient id="readability" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#05060a" stop-opacity=".42"/><stop offset=".55" stop-color="#05060a" stop-opacity=".20"/><stop offset="1" stop-color="#05060a" stop-opacity=".05"/></linearGradient>
+      <rect width="1200" height="380" fill="url(#readability)"/>
     </g>
     <rect x="26" y="25" width="1148" height="330" rx="24" fill="none" stroke="#ff3345" stroke-opacity=".46" stroke-width="2"/>
     <path d="M52 40H180L198 58L180 76H52L40 58Z" fill="url(#red)" filter="url(#shadow)"/><circle cx="59" cy="58" r="4" fill="#73000d"/><text x="119" y="64" text-anchor="middle" fill="#fff" font-size="15" font-weight="950" letter-spacing="1.8">TIKONITA</text>
