@@ -333,6 +333,8 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const lastValue = claimed ? response : `${accountMonths} mois`;
   const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ÂGE DU COMPTE';
   const status = claimed ? 'PRIS EN CHARGE' : 'NOUVEAU TICKET';
+  const ticketTag = escapeXml(shorten(String(ticket.type ?? 'Support').replace(/[_-]+/g, ' '), 15).toUpperCase());
+  const rankTagWidth = Math.max(150, rank.length * 11 + 58);
   const footer = claimed
     ? 'TIKONITA · UNE ÉQUIPE À VOTRE ÉCOUTE'
     : `PROCHAIN PALIER · ${count}/${nextMilestone} TICKETS`;
@@ -358,14 +360,14 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
       <rect x="0" y="373" width="1200" height="7" fill="url(#red)"/>
     </g>
     <rect x="26" y="25" width="1148" height="330" rx="24" fill="none" stroke="#ff3345" stroke-opacity=".46" stroke-width="2"/>
-    <rect x="52" y="40" width="146" height="36" rx="18" fill="url(#red)" filter="url(#shadow)"/><text x="125" y="64" text-anchor="middle" fill="#fff" font-size="15" font-weight="900" letter-spacing="1.5">TIKONITA</text>
-    <rect x="210" y="40" width="118" height="36" rx="18" fill="#15151b" stroke="#ffffff" stroke-opacity=".15"/><text x="269" y="64" text-anchor="middle" fill="#d7d5da" font-size="14" font-weight="800">SUPPORT</text>
-    <rect x="962" y="40" width="178" height="36" rx="18" fill="${claimed ? '#123b24' : '#3d180b'}" stroke="${claimed ? '#35d36f' : '#ff9c36'}" stroke-opacity=".65"/><circle cx="987" cy="58" r="6" fill="${claimed ? '#51e482' : '#ffad42'}"/><text x="1003" y="63" fill="${claimed ? '#69e993' : '#ffbd63'}" font-size="13" font-weight="900">${status}</text>
+    <path d="M52 40H180L198 58L180 76H52L40 58Z" fill="url(#red)" filter="url(#shadow)"/><circle cx="59" cy="58" r="4" fill="#73000d"/><text x="119" y="64" text-anchor="middle" fill="#fff" font-size="15" font-weight="950" letter-spacing="1.8">TIKONITA</text>
+    <path d="M210 40H342L354 58L342 76H210L198 58Z" fill="#15151b" stroke="#fff" stroke-opacity=".18"/><text x="276" y="64" text-anchor="middle" fill="#d7d5da" font-size="13" font-weight="850" letter-spacing="1.1">${ticketTag}</text>
+    <path d="M944 40H1127L1140 58L1127 76H944L932 58Z" fill="${claimed ? '#123b24' : '#3d180b'}" stroke="${claimed ? '#35d36f' : '#ff9c36'}" stroke-opacity=".75"/><circle cx="964" cy="58" r="6" fill="${claimed ? '#51e482' : '#ffad42'}"/><text x="980" y="63" fill="${claimed ? '#69e993' : '#ffbd63'}" font-size="13" font-weight="950" letter-spacing=".5">${status}</text>
     <circle cx="132" cy="185" r="79" fill="#0b0c10" stroke="#ff2538" stroke-width="7" filter="url(#shadow)"/>
     ${avatar ? `<image href="${avatar}" x="60" y="113" width="144" height="144" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatar)"/>` : ''}
     <circle cx="188" cy="240" r="14" fill="${claimed ? '#50dd7e' : '#ff3348'}" stroke="#0a0b0f" stroke-width="5"/>
     <text x="245" y="132" fill="#fff" font-size="43" font-weight="950" letter-spacing="-.5">${name}</text>
-    <rect x="245" y="150" width="${Math.max(110, rank.length * 10 + 40)}" height="32" rx="16" fill="#3b2b09" stroke="#f6c936" stroke-opacity=".35"/><text x="263" y="171" fill="#ffd652" font-size="13" font-weight="900">◆ ${rank}</text>
+    <path d="M245 150H${245 + rankTagWidth - 18}L${245 + rankTagWidth} 166L${245 + rankTagWidth - 18} 182H245L233 166Z" fill="#3b2b09" stroke="#f6c936" stroke-opacity=".48"/><circle cx="252" cy="166" r="4" fill="#ffd652"/><text x="268" y="171" fill="#ffd652" font-size="13" font-weight="950" letter-spacing=".7">${rank}</text>
     <g transform="translate(245 214)">
       <text x="0" y="0" fill="#fff" font-size="37" font-weight="950">${count}</text><text x="0" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">TICKETS ${claimed ? 'PRIS' : 'CRÉÉS'}</text>
       <line x1="205" y1="-35" x2="205" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
