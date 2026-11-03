@@ -21,7 +21,7 @@ const INTER_FONT_DATA = readFileSync(
   new URL('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2', import.meta.url),
 ).toString('base64');
 const TICKET_CARD_BACKGROUND_DATA = readFileSync(
-  new URL('../assets/ticket-card-comic.png', import.meta.url),
+  new URL('../assets/ticket-card-user-background.png', import.meta.url),
 ).toString('base64');
 const CANDY_ICON_DATA = Buffer.from(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
