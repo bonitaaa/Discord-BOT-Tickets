@@ -306,7 +306,6 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const user = member?.user ?? await guild.client.users.fetch(userId).catch(() => null);
   const avatar = user ? await imageData(user.displayAvatarURL({ extension: 'png', size: 256 })) : null;
   const claimed = Boolean(ticket.claimedBy);
-  const accent = claimed ? '#ff464f' : '#ff464f';
   const name = escapeXml(shorten(member?.displayName ?? user?.username ?? 'Membre', 22).toUpperCase());
   const count = claimed ? Number(stats.claimed ?? 1) : Number(stats.created ?? 1);
   const responseSeconds = claimed ? Math.max(0, Math.round((ticket.claimedAt - ticket.createdAt) / 1000)) : 0;
@@ -314,16 +313,72 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const joinedMonths = member?.joinedTimestamp
     ? Math.max(0, Math.floor((Date.now() - member.joinedTimestamp) / (30.44 * 24 * 60 * 60 * 1000)))
     : 0;
+  const accountMonths = user?.createdTimestamp
+    ? Math.max(0, Math.floor((Date.now() - user.createdTimestamp) / (30.44 * 24 * 60 * 60 * 1000)))
+    : 0;
+  const topRole = member?.roles.cache
+    .filter((role) => role.id !== guild.id)
+    .sort((left, right) => right.position - left.position)
+    .first();
+  const rank = escapeXml(shorten(cleanDisplayName(topRole?.name ?? (claimed ? 'Équipe support' : 'Membre')), 18).toUpperCase());
   const rating = Number(stats.rating ?? 0);
-  const ratingLabel = rating > 0 ? `★ ${rating.toFixed(1)}` : '★—';
-  const secondMetric = claimed
-    ? `<text x="570" y="218" fill="#ffd42a" font-size="40" font-weight="900">${escapeXml(ratingLabel)}</text><text x="570" y="258" fill="#8f8998" font-size="15" font-weight="800">ÉVALUATION</text><line x1="520" y1="188" x2="520" y2="266" stroke="#77717d" stroke-width="2"/>`
-    : `<text x="430" y="222" fill="#fff" font-size="38" font-weight="900">${joinedMonths} MOIS</text><text x="430" y="258" fill="#8f8998" font-size="15" font-weight="800">ANCIENNETÉ SERVEUR</text><line x1="390" y1="188" x2="390" y2="266" stroke="#77717d" stroke-width="2"/>`;
-  const thirdMetric = claimed
-    ? `<line x1="745" y1="188" x2="745" y2="266" stroke="#77717d" stroke-width="2"/><text x="785" y="222" fill="#3ee37d" font-size="38" font-weight="900">${escapeXml(response)}</text><text x="785" y="258" fill="#8f8998" font-size="15" font-weight="800">TEMPS DE RÉPONSE</text>`
-    : '';
-  const progress = claimed ? '' : `<text x="48" y="294" fill="#918b98" font-size="14" font-weight="800">PROCHAIN PALIER : RECRUE I</text><text x="1048" y="294" text-anchor="end" fill="#918b98" font-size="14" font-weight="800">1/2</text><rect x="48" y="308" width="1000" height="9" rx="5" fill="#2a1720"/><rect x="48" y="308" width="500" height="9" rx="5" fill="#c9353d"/><circle cx="548" cy="312.5" r="4.5" fill="#fff"/>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1096" height="345"><defs><style>@font-face{font-family:'LeaderboardInter';src:url(data:font/woff2;base64,${INTER_FONT_DATA}) format('woff2');font-weight:100 900}text{font-family:'LeaderboardInter','Noto Sans',sans-serif}</style><linearGradient id="bg" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#090910"/><stop offset="1" stop-color="#3a0d14"/></linearGradient><clipPath id="card"><rect width="1096" height="345" rx="34"/></clipPath><clipPath id="avatar"><circle cx="110" cy="150" r="66"/></clipPath></defs><g clip-path="url(#card)"><rect width="1096" height="345" fill="url(#bg)"/><rect x="40" width="230" height="4" fill="${accent}"/></g><rect x="45" y="30" width="165" height="34" rx="17" fill="#ff4c50"/><text x="127" y="53" text-anchor="middle" fill="#fff" font-size="16" font-weight="900">PVCOOL SUPPORT</text><rect x="228" y="30" width="${claimed ? 176 : 115}" height="34" rx="17" fill="#29252f"/><text x="${claimed ? 316 : 285}" y="53" text-anchor="middle" fill="#aaa5af" font-size="16" font-weight="850">${claimed ? 'TICKET CLAIMED' : 'SUPPORT'}</text>${claimed ? '<rect x="858" y="29" width="172" height="36" rx="18" fill="#193b20" stroke="#337a43"/><circle cx="883" cy="47" r="6" fill="#66dc82"/><text x="898" y="53" fill="#66dc82" font-size="14" font-weight="900">PRIS EN CHARGE</text>' : ''}<circle cx="110" cy="150" r="70" fill="#15131a" stroke="${accent}" stroke-width="5"/>${avatar ? `<image href="${avatar}" x="44" y="84" width="132" height="132" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatar)"/>` : ''}<text x="205" y="123" fill="#fff" font-size="42" font-weight="900">${name}</text><rect x="205" y="140" width="${claimed ? 84 : 98}" height="31" rx="16" fill="#493808"/><text x="${claimed ? 247 : 254}" y="161" text-anchor="middle" fill="#ffd72f" font-size="14" font-weight="900">${claimed ? 'STAFF' : 'MEMBRE'}</text>${!claimed ? `<text x="205" y="190" fill="#77717d" font-size="16" font-weight="800">${escapeXml(userId)}</text>` : ''}<text x="205" y="235" fill="#fff" font-size="38" font-weight="900">${count}</text><text x="205" y="267" fill="#8f8998" font-size="15" font-weight="800">TICKETS ${claimed ? 'PRIS' : 'CRÉÉS'}</text>${secondMetric}${thirdMetric}${progress}</svg>`;
+  const ratingLabel = rating > 0 ? rating.toFixed(1) : '—';
+  const milestones = [2, 5, 10, 25, 50, 100, 250, 500];
+  const nextMilestone = milestones.find((milestone) => milestone > count) ?? Math.ceil((count + 1) / 500) * 500;
+  const previousMilestone = [...milestones].reverse().find((milestone) => milestone <= count) ?? 0;
+  const progressRatio = Math.min(1, Math.max(0, (count - previousMilestone) / (nextMilestone - previousMilestone)));
+  const progressWidth = Math.max(8, Math.round(1020 * progressRatio));
+  const middleValue = claimed ? ratingLabel : `${joinedMonths} mois`;
+  const middleLabel = claimed ? 'NOTE MOYENNE' : 'ANCIENNETÉ SERVEUR';
+  const lastValue = claimed ? response : `${accountMonths} mois`;
+  const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ÂGE DU COMPTE';
+  const status = claimed ? 'PRIS EN CHARGE' : 'NOUVEAU TICKET';
+  const footer = claimed
+    ? 'TIKONITA · UNE ÉQUIPE À VOTRE ÉCOUTE'
+    : `PROCHAIN PALIER · ${count}/${nextMilestone} TICKETS`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380">
+    <defs>
+      <style>@font-face{font-family:'LeaderboardInter';src:url(data:font/woff2;base64,${INTER_FONT_DATA}) format('woff2');font-weight:100 900}text{font-family:'LeaderboardInter','Noto Sans',sans-serif}</style>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07080c"/><stop offset=".52" stop-color="#11090d"/><stop offset="1" stop-color="#31060c"/></linearGradient>
+      <linearGradient id="red" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ff2538"/><stop offset="1" stop-color="#a70015"/></linearGradient>
+      <radialGradient id="glow"><stop stop-color="#ff1832" stop-opacity=".32"/><stop offset="1" stop-color="#ff1832" stop-opacity="0"/></radialGradient>
+      <pattern id="grain" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="3" cy="5" r="1" fill="#fff" opacity=".035"/><path d="M8 22L22 8" stroke="#fff" stroke-opacity=".025"/></pattern>
+      <clipPath id="card"><rect width="1200" height="380" rx="30"/></clipPath>
+      <clipPath id="avatar"><circle cx="132" cy="185" r="72"/></clipPath>
+      <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity=".65"/></filter>
+    </defs>
+    <g clip-path="url(#card)">
+      <rect width="1200" height="380" fill="url(#bg)"/>
+      <ellipse cx="950" cy="160" rx="470" ry="330" fill="url(#glow)"/>
+      <path d="M0 0H480L355 45L510 68L365 105L510 132L320 165L450 207L300 238L430 280L250 310L330 380H0Z" fill="#c80c20" opacity=".10"/>
+      <path d="M1200 32L1060 77L1175 102L1010 151L1150 176L985 235L1188 268L1045 323L1200 350Z" fill="#ff1730" opacity=".12"/>
+      <rect width="1200" height="380" fill="url(#grain)"/>
+      <path d="M880 57L922 108L973 84L1004 132L1065 60L1045 166H897Z" fill="none" stroke="#ff1830" stroke-width="8" opacity=".14"/>
+      <rect x="0" y="0" width="1200" height="7" fill="url(#red)"/>
+      <rect x="0" y="373" width="1200" height="7" fill="url(#red)"/>
+    </g>
+    <rect x="26" y="25" width="1148" height="330" rx="24" fill="none" stroke="#ff3345" stroke-opacity=".46" stroke-width="2"/>
+    <rect x="52" y="40" width="146" height="36" rx="18" fill="url(#red)" filter="url(#shadow)"/><text x="125" y="64" text-anchor="middle" fill="#fff" font-size="15" font-weight="900" letter-spacing="1.5">TIKONITA</text>
+    <rect x="210" y="40" width="118" height="36" rx="18" fill="#15151b" stroke="#ffffff" stroke-opacity=".15"/><text x="269" y="64" text-anchor="middle" fill="#d7d5da" font-size="14" font-weight="800">SUPPORT</text>
+    <rect x="962" y="40" width="178" height="36" rx="18" fill="${claimed ? '#123b24' : '#3d180b'}" stroke="${claimed ? '#35d36f' : '#ff9c36'}" stroke-opacity=".65"/><circle cx="987" cy="58" r="6" fill="${claimed ? '#51e482' : '#ffad42'}"/><text x="1003" y="63" fill="${claimed ? '#69e993' : '#ffbd63'}" font-size="13" font-weight="900">${status}</text>
+    <circle cx="132" cy="185" r="79" fill="#0b0c10" stroke="#ff2538" stroke-width="7" filter="url(#shadow)"/>
+    ${avatar ? `<image href="${avatar}" x="60" y="113" width="144" height="144" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatar)"/>` : ''}
+    <circle cx="188" cy="240" r="14" fill="${claimed ? '#50dd7e' : '#ff3348'}" stroke="#0a0b0f" stroke-width="5"/>
+    <text x="245" y="132" fill="#fff" font-size="43" font-weight="950" letter-spacing="-.5">${name}</text>
+    <rect x="245" y="150" width="${Math.max(110, rank.length * 10 + 40)}" height="32" rx="16" fill="#3b2b09" stroke="#f6c936" stroke-opacity=".35"/><text x="263" y="171" fill="#ffd652" font-size="13" font-weight="900">◆ ${rank}</text>
+    <g transform="translate(245 214)">
+      <text x="0" y="0" fill="#fff" font-size="37" font-weight="950">${count}</text><text x="0" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">TICKETS ${claimed ? 'PRIS' : 'CRÉÉS'}</text>
+      <line x1="205" y1="-35" x2="205" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
+      <text x="250" y="0" fill="${claimed ? '#ffd84b' : '#fff'}" font-size="37" font-weight="950">${escapeXml(middleValue)}</text><text x="250" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${middleLabel}</text>
+      <line x1="505" y1="-35" x2="505" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
+      <text x="550" y="0" fill="${claimed ? '#54df83' : '#fff'}" font-size="37" font-weight="950">${escapeXml(lastValue)}</text><text x="550" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${lastLabel}</text>
+    </g>
+    <text x="62" y="308" fill="#b2adb7" font-size="13" font-weight="850" letter-spacing="1.2">${footer}</text>
+    <text x="1138" y="308" text-anchor="end" fill="#7e7883" font-size="13" font-weight="750">PVCOOL • TICKET SYSTEM</text>
+    <rect x="62" y="326" width="1020" height="10" rx="5" fill="#280b11" stroke="#fff" stroke-opacity=".07"/>
+    <rect x="62" y="326" width="${claimed ? 1020 : progressWidth}" height="10" rx="5" fill="url(#red)"/>
+    <circle cx="${claimed ? 1082 : 62 + progressWidth}" cy="331" r="6" fill="#fff"/>
+  </svg>`;
   return sharp(Buffer.from(svg)).resize({ width: 2192 }).png({ compressionLevel: 9 }).toBuffer();
 }
 
