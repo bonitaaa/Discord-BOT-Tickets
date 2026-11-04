@@ -21,7 +21,7 @@ const INTER_FONT_DATA = readFileSync(
   new URL('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2', import.meta.url),
 ).toString('base64');
 const TICKET_CARD_BACKGROUND_DATA = readFileSync(
-  new URL('../assets/ticket-card-liquid-background.png', import.meta.url),
+  new URL('../assets/ticket-card-grunge.png', import.meta.url),
 ).toString('base64');
 const CANDY_ICON_DATA = Buffer.from(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -319,6 +319,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const rank = claimed ? 'STAFF' : 'MEMBRE';
   const rating = Number(stats.rating ?? 0);
   const ratingLabel = rating > 0 ? rating.toFixed(1) : '—';
+  const ratingsCount = Number(stats.ratingsCount ?? 0);
   const milestones = [2, 5, 10, 25, 50, 100, 250, 500];
   const nextMilestone = milestones.find((milestone) => milestone > count) ?? Math.ceil((count + 1) / 500) * 500;
   const previousMilestone = [...milestones].reverse().find((milestone) => milestone <= count) ?? 0;
@@ -363,7 +364,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
     <g transform="translate(245 214)">
       <text x="0" y="0" fill="#fff" font-size="37" font-weight="950">${count}</text><text x="0" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${claimed ? 'TICKETS PRIS' : 'DEALS'}</text>
       <line x1="205" y1="-35" x2="205" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
-      <text x="250" y="0" fill="${claimed ? '#ffd84b' : '#fff'}" font-size="37" font-weight="950">${escapeXml(middleValue)}</text><text x="250" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${middleLabel}</text>
+      <text x="250" y="0" fill="${claimed ? '#ffd84b' : '#fff'}" font-size="37" font-weight="950">${escapeXml(middleValue)}</text>${claimed && ratingsCount > 0 ? `<text x="318" y="-2" fill="#cbc7cf" font-size="12" font-weight="800">${ratingsCount} AVIS</text>` : ''}<text x="250" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${middleLabel}</text>
       <line x1="505" y1="-35" x2="505" y2="40" stroke="#fff" stroke-opacity=".17" stroke-width="2"/>
       <text x="550" y="0" fill="${claimed ? '#54df83' : '#fff'}" font-size="37" font-weight="950">${escapeXml(lastValue)}</text><text x="550" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${lastLabel}</text>
     </g>

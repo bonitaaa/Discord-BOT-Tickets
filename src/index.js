@@ -1729,6 +1729,7 @@ async function ticketClaimedMessage(guild, ticket) {
       attachment: await renderTicketCard(guild, ticket.claimedBy, ticket, {
         claimed: ticket.stats?.claimed ?? 1,
         rating: ticket.stats?.rating ?? 0,
+        ratingsCount: ticket.stats?.ratingsCount ?? 0,
       }),
       name: 'ticket-staff.png',
     }],
@@ -1941,6 +1942,7 @@ async function handleTicketButton(interaction) {
     ticket.stats = {
       claimed: guildData.ticketStats.claimed[actor.id],
       rating: staffRating?.count ? staffRating.total / staffRating.count : 0,
+      ratingsCount: staffRating?.count ?? 0,
     };
     await interaction.editReply(await ticketWelcomeMessage(interaction.guild, ticket, false, false));
     const claimMessage = await interaction.channel.send(ticketClaimedPendingMessage(ticket));
