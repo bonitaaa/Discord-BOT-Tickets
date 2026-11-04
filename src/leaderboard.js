@@ -369,7 +369,6 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
       <text x="550" y="0" fill="${claimed ? '#54df83' : '#fff'}" font-size="37" font-weight="950">${escapeXml(lastValue)}</text><text x="550" y="28" fill="#9e99a4" font-size="13" font-weight="850" letter-spacing="1.3">${lastLabel}</text>
     </g>
     <text x="62" y="308" fill="#b2adb7" font-size="13" font-weight="850" letter-spacing="1.2">${footer}</text>
-    <text x="1138" y="308" text-anchor="end" fill="#7e7883" font-size="13" font-weight="750">PVCOOL • TICKET SYSTEM</text>
     <rect x="62" y="326" width="1020" height="10" rx="5" fill="#280b11" stroke="#fff" stroke-opacity=".07"/>
     <rect x="62" y="326" width="${claimed ? 1020 : progressWidth}" height="10" rx="5" fill="url(#red)"/>
     <circle cx="${claimed ? 1082 : 62 + progressWidth}" cy="331" r="6" fill="#fff"/>
