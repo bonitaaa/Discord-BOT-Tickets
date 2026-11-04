@@ -331,7 +331,12 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const lastValue = claimed ? response : `${joinedMonths} mois`;
   const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ANCIENNETÉ';
   const status = claimed ? 'PRIS EN CHARGE' : 'NOUVEAU TICKET';
-  const ticketTag = claimed ? 'STAFF' : 'SUPPORT';
+  const ticketTypeLabels = { help: 'BESOIN D’AIDE', owner: 'CONTACT OWNER' };
+  const ticketTag = escapeXml(shorten(
+    ticket.typeLabel ?? ticketTypeLabels[ticket.type] ?? ticket.type ?? 'SUPPORT',
+    20,
+  ).toUpperCase());
+  const ticketTagWidth = Math.min(240, Math.max(132, ticketTag.length * 10 + 38));
   const rankTagWidth = claimed ? 132 : 148;
   const rankTagX = Math.min(780, 245 + Math.max(215, displayName.length * 27));
   const footer = claimed
@@ -356,7 +361,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
     </g>
     <rect x="26" y="25" width="1148" height="330" rx="24" fill="none" stroke="#ff3345" stroke-opacity=".46" stroke-width="2"/>
     <rect x="40" y="40" width="158" height="36" rx="18" fill="url(#red)" filter="url(#shadow)"/><circle cx="62" cy="58" r="4" fill="#73000d"/><text x="125" y="64" text-anchor="middle" fill="#fff" font-size="15" font-weight="950" letter-spacing="1.8">TIKONITA</text>
-    <rect x="210" y="40" width="132" height="36" rx="18" fill="#15151b" stroke="#fff" stroke-opacity=".18"/><text x="276" y="64" text-anchor="middle" fill="#d7d5da" font-size="13" font-weight="850" letter-spacing="1.1">${ticketTag}</text>
+    <rect x="210" y="40" width="${ticketTagWidth}" height="36" rx="18" fill="#15151b" stroke="#fff" stroke-opacity=".18"/><text x="${210 + ticketTagWidth / 2}" y="64" text-anchor="middle" fill="#d7d5da" font-size="13" font-weight="850" letter-spacing="1.1">${ticketTag}</text>
     <rect x="932" y="40" width="208" height="36" rx="18" fill="${claimed ? '#123b24' : '#3d180b'}" stroke="${claimed ? '#35d36f' : '#ff9c36'}" stroke-opacity=".75"/><circle cx="960" cy="58" r="6" fill="${claimed ? '#51e482' : '#ffad42'}"/><text x="976" y="63" fill="${claimed ? '#69e993' : '#ffbd63'}" font-size="13" font-weight="950" letter-spacing=".5">${status}</text>
     <circle cx="132" cy="185" r="79" fill="#0b0c10" stroke="#ff2538" stroke-width="7" filter="url(#shadow)"/>
     ${avatar ? `<image href="${avatar}" x="60" y="113" width="144" height="144" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatar)"/>` : ''}

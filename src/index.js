@@ -1895,6 +1895,7 @@ async function handleTicketSelect(interaction) {
   const ticket = {
     ownerId: member.id,
     type: typeKey,
+    typeLabel: type.label,
     createdAt: Date.now(),
     claimedBy: null,
   };
