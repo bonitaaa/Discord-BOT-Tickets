@@ -320,9 +320,13 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const count = claimed ? Number(stats.claimed ?? 1) : Number(stats.created ?? 1);
   const responseSeconds = claimed ? Math.max(0, Math.round((ticket.claimedAt - ticket.createdAt) / 1000)) : 0;
   const response = responseSeconds < 60 ? `${responseSeconds}s` : `${Math.floor(responseSeconds / 60)}m ${responseSeconds % 60}s`;
-  const joinedMonths = member?.joinedTimestamp
-    ? Math.max(0, Math.floor((Date.now() - member.joinedTimestamp) / (30.44 * 24 * 60 * 60 * 1000)))
+  const joinedDays = member?.joinedTimestamp
+    ? Math.max(0, Math.floor((Date.now() - member.joinedTimestamp) / (24 * 60 * 60 * 1000)))
     : 0;
+  const joinedMonths = Math.floor(joinedDays / 30.44);
+  const serverTenure = joinedMonths >= 1
+    ? `${joinedMonths} mois`
+    : `${joinedDays} jour${joinedDays === 1 ? '' : 's'}`;
   const rank = claimed ? 'STAFF' : 'MEMBRE';
   const rating = Number(stats.rating ?? 0);
   const ratingLabel = rating > 0 ? rating.toFixed(1) : '—';
@@ -334,7 +338,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const progressWidth = Math.max(8, Math.round(1020 * progressRatio));
   const middleValue = claimed ? ratingLabel : Number(stats.vouchesGiven ?? 0);
   const middleLabel = claimed ? 'NOTE MOYENNE' : 'VOUCHES DONNÉS';
-  const lastValue = claimed ? response : `${joinedMonths} mois`;
+  const lastValue = claimed ? response : serverTenure;
   const lastLabel = claimed ? 'TEMPS DE RÉPONSE' : 'ANCIENNETÉ';
   const status = claimed ? 'PRIS EN CHARGE' : 'NOUVEAU TICKET';
   const ticketTypeLabels = { help: 'BESOIN D’AIDE', owner: 'CONTACT OWNER' };
