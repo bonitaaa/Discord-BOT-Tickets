@@ -20,8 +20,11 @@ const PARIS_TIME_ZONE = 'Europe/Paris';
 const INTER_FONT_DATA = readFileSync(
   new URL('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2', import.meta.url),
 ).toString('base64');
-const TICKET_CARD_BACKGROUND_DATA = readFileSync(
-  new URL('../assets/ticket-card-liquid-background.png', import.meta.url),
+const TICKET_CARD_WAITING_BACKGROUND_DATA = readFileSync(
+  new URL('../assets/ticket-card-waiting-background.png', import.meta.url),
+).toString('base64');
+const TICKET_CARD_CLAIMED_BACKGROUND_DATA = readFileSync(
+  new URL('../assets/ticket-card-claimed-background.png', import.meta.url),
 ).toString('base64');
 const CANDY_ICON_DATA = Buffer.from(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -309,6 +312,9 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
   const user = member?.user ?? await guild.client.users.fetch(userId).catch(() => null);
   const avatar = user ? await imageData(user.displayAvatarURL({ extension: 'png', size: 256 })) : null;
   const claimed = Boolean(ticket.claimedBy);
+  const backgroundData = claimed
+    ? TICKET_CARD_CLAIMED_BACKGROUND_DATA
+    : TICKET_CARD_WAITING_BACKGROUND_DATA;
   const displayName = shorten(member?.displayName ?? user?.username ?? 'Membre', 22).toUpperCase();
   const name = escapeXml(displayName);
   const count = claimed ? Number(stats.claimed ?? 1) : Number(stats.created ?? 1);
@@ -354,7 +360,7 @@ export async function renderTicketCard(guild, userId, ticket, stats = {}) {
       <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity=".65"/></filter>
     </defs>
     <g clip-path="url(#card)">
-      <image href="data:image/png;base64,${TICKET_CARD_BACKGROUND_DATA}" x="0" y="0" width="1200" height="380" preserveAspectRatio="xMidYMid slice"/>
+      <image href="data:image/png;base64,${backgroundData}" x="0" y="0" width="1200" height="380" preserveAspectRatio="xMidYMid slice"/>
       <rect width="1200" height="380" fill="#05060a" opacity=".20"/>
       <linearGradient id="readability" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#05060a" stop-opacity=".42"/><stop offset=".55" stop-color="#05060a" stop-opacity=".20"/><stop offset="1" stop-color="#05060a" stop-opacity=".05"/></linearGradient>
       <rect width="1200" height="380" fill="url(#readability)"/>
