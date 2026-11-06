@@ -192,6 +192,14 @@ const CREATOR_ROLE_ID = '1565034303560355870';
 const ELITE_ROLE_ID = '1565392656970817568';
 const PREMIUM_ROLE_ID = '1564636248499429446';
 const PLUS_ROLE_ID = '1564638261769404428';
+const BASIC_ROLE_ID = '1564636235333505126';
+
+function prestigeRoleForGuild(guild) {
+  return guild?.roles.cache.find((role) => {
+    const name = role.name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    return name === 'prestige' || name === 'pvcool prestige' || name.endsWith(' prestige');
+  }) ?? null;
+}
 const TICKET_PANEL_CHANNEL_ID = '1563907534119633019';
 const TICKET_CATEGORY_ID = '1566175178445291691';
 const TICKET_SELECT_ID = 'ticket-panel:select';
@@ -1467,7 +1475,7 @@ const TICKET_TYPES = {
     emoji: '❓',
     description: 'Obtenir l’aide de l’équipe PVCool.',
     channelPrefix: 'aide',
-    roleIds: [PLUS_ROLE_ID, ELITE_ROLE_ID],
+    roleIds: [PREMIUM_ROLE_ID, ELITE_ROLE_ID],
     color: 0x5865F2,
   },
   owner: {
@@ -1475,15 +1483,15 @@ const TICKET_TYPES = {
     emoji: '👑',
     description: 'Échanger en privé avec la direction.',
     channelPrefix: 'owner',
-    roleIds: [CREATOR_ROLE_ID, ELITE_ROLE_ID],
+    roleIds: [],
     color: 0xED4245,
   },
 };
 
-function ticketPanelMessage() {
+function ticketPanelMessage(guild) {
   const select = new StringSelectMenuBuilder()
     .setCustomId(TICKET_SELECT_ID)
-    .setPlaceholder('Choisis le sujet de ta demande')
+    .setPlaceholder('Quel est le sujet de ta demande ?')
     .setMinValues(1)
     .setMaxValues(1)
     .addOptions(...Object.entries(TICKET_TYPES).map(([value, ticket]) => ({
@@ -1492,26 +1500,39 @@ function ticketPanelMessage() {
       description: ticket.description,
       emoji: ticket.emoji,
     })));
+  const header = new SectionBuilder()
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      '-# PVCOOL · CENTRE D’ASSISTANCE',
+      '## 🎫 Comment pouvons-nous t’aider ?',
+      'Choisis le sujet correspondant à ta demande. Un salon privé sera créé avec la bonne équipe.',
+    ].join('\n')))
+    .setThumbnailAccessory(new ThumbnailBuilder().setURL(guild.client.user.displayAvatarURL({ size: 256 })));
   const container = new ContainerBuilder()
-    .setAccentColor(0x76569B)
+    .setAccentColor(0x8B5CF6)
+    .addSectionComponents(header)
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large),
+    )
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent([
-        '## 🎫 Support PVCool',
-        '-# Ouvre un espace privé avec l’équipe adaptée à ta demande.',
+        '### ❓ Besoin d’aide',
+        'Une question, un problème ou besoin d’un accompagnement sur le serveur.',
+        '-# Équipe autorisée · Premium · Elite · Prestige · Créateur',
+        '',
+        '### 👑 Contacter un owner',
+        'Une demande privée ou importante destinée à la direction de PVCool.',
+        '-# Équipe autorisée · Prestige · Créateur',
       ].join('\n')),
     )
     .addSeparatorComponents(
-      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large),
     )
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent([
-        '**Besoin d’aide** — PVCool Plus et Elite',
-        '**Contacter un owner** — Créateur et PVCool Elite',
-        '',
-        '-# Un seul ticket ouvert par membre. Choisis le bon sujet dans la liste.',
-      ].join('\n')),
-    )
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Sélectionne ton type de ticket**'))
     .addActionRowComponents(new ActionRowBuilder().addComponents(select));
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent([
+    '-# 🔒 Conversation privée · un seul ticket ouvert par membre',
+    '-# Explique clairement ta demande après l’ouverture pour recevoir une réponse plus rapidement.',
+  ].join('\n')));
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
@@ -1521,10 +1542,7 @@ async function ensureTicketPanel(guild) {
   await Promise.all(Object.keys(guildData.tickets).map(async (channelId) => {
     const ticketChannel = await guild.channels.fetch(channelId).catch(() => null);
     if (!ticketChannel) return;
-    await ticketChannel.permissionOverwrites.delete(
-      PREMIUM_ROLE_ID,
-      'Retrait définitif de PVCool Premium du système de tickets',
-    ).catch(() => null);
+    await syncTicketWritePermissions(ticketChannel, guildData.tickets[channelId]).catch(console.error);
   }));
   const channel = await guild.channels.fetch(TICKET_PANEL_CHANNEL_ID).catch(() => null);
   if (!channel?.isTextBased() || !('messages' in channel)) {
@@ -1543,11 +1561,11 @@ async function ensureTicketPanel(guild) {
     if (message) guildData.ticketPanelMessageId = message.id;
   }
   if (message) {
-    await message.edit(ticketPanelMessage())
+    await message.edit(ticketPanelMessage(guild))
       .catch((error) => console.error(`Impossible de modifier le panneau tickets permanent ${message.id}:`, error));
   }
   else {
-    message = await channel.send(ticketPanelMessage());
+    message = await channel.send(ticketPanelMessage(guild));
     guildData.ticketPanelMessageId = message.id;
     await saveStore();
   }
@@ -1567,7 +1585,10 @@ function ticketStaffIds(type) {
   return TICKET_TYPES[type]?.roleIds ?? [];
 }
 
-const TICKET_FULL_ACCESS_ROLE_IDS = [CREATOR_ROLE_ID, ELITE_ROLE_ID];
+const TICKET_FULL_ACCESS_ROLE_IDS = [CREATOR_ROLE_ID];
+function ticketFullAccessRoleIds(guild) {
+  return [...TICKET_FULL_ACCESS_ROLE_IDS, prestigeRoleForGuild(guild)?.id].filter(Boolean);
+}
 const TICKET_READ_PERMISSIONS = [
   PermissionFlagsBits.ViewChannel,
   PermissionFlagsBits.ReadMessageHistory,
@@ -1587,8 +1608,27 @@ async function deleteTicketClaimMessage(channel, ticket) {
 }
 
 async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = null) {
-  const elevatedRoles = new Set(TICKET_FULL_ACCESS_ROLE_IDS);
+  const elevatedRoles = new Set(ticketFullAccessRoleIds(channel.guild));
   const visibleStaffRoles = new Set([...ticketStaffIds(ticket.type), ...elevatedRoles]);
+  const knownTicketRoles = new Set([
+    CREATOR_ROLE_ID,
+    ELITE_ROLE_ID,
+    PREMIUM_ROLE_ID,
+    PLUS_ROLE_ID,
+    BASIC_ROLE_ID,
+    prestigeRoleForGuild(channel.guild)?.id,
+  ].filter(Boolean));
+
+  for (const roleId of knownTicketRoles) {
+    if (visibleStaffRoles.has(roleId)) continue;
+    await channel.permissionOverwrites.delete(roleId, 'Retrait d’un accès non autorisé pour ce type de ticket').catch(() => null);
+  }
+  if (ticket.ownerId !== OWNER_COMMAND_USER_ID && ticket.claimedBy !== OWNER_COMMAND_USER_ID) {
+    await channel.permissionOverwrites.delete(
+      OWNER_COMMAND_USER_ID,
+      'Retrait de l’ancien accès individuel aux tickets',
+    ).catch(() => null);
+  }
 
   for (const roleId of visibleStaffRoles) {
     await channel.permissionOverwrites.edit(roleId, {
@@ -1868,14 +1908,10 @@ async function handleTicketSelect(interaction) {
     },
     ...type.roleIds.map((roleId) => ({
       id: roleId,
-      allow: TICKET_FULL_ACCESS_ROLE_IDS.includes(roleId) ? TICKET_WRITE_PERMISSIONS : TICKET_READ_PERMISSIONS,
+      allow: ticketFullAccessRoleIds(interaction.guild).includes(roleId) ? TICKET_WRITE_PERMISSIONS : TICKET_READ_PERMISSIONS,
     })),
   ];
-  if (member.id !== OWNER_COMMAND_USER_ID) permissionOverwrites.push({
-    id: OWNER_COMMAND_USER_ID,
-    allow: TICKET_WRITE_PERMISSIONS,
-  });
-  for (const roleId of TICKET_FULL_ACCESS_ROLE_IDS) {
+  for (const roleId of ticketFullAccessRoleIds(interaction.guild)) {
     if (!permissionOverwrites.some((overwrite) => overwrite.id === roleId)) {
       permissionOverwrites.push({ id: roleId, allow: TICKET_WRITE_PERMISSIONS });
     }
