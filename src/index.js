@@ -221,6 +221,10 @@ const SUPPORT_COMMANDS = [
     .setDescription('Interdire temporairement à un membre d’ouvrir des tickets')
     .addUserOption((option) => option.setName('membre').setDescription('Membre à sanctionner').setRequired(true))
     .addStringOption((option) => option.setName('duree').setDescription('Exemples : 30m, 2h ou 3j').setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('unpunish')
+    .setDescription('Rétablir immédiatement l’accès d’un membre aux tickets')
+    .addUserOption((option) => option.setName('membre').setDescription('Membre à réautoriser').setRequired(true)),
 ].map((command) => command.toJSON());
 const ROLE_MANAGER_ID = '1564627919354069012';
 const MUSIC_BOT_ROLE_NAME = /^(?:Jockie Music(?: \([1-3]\))?|.*ND Player(?: [23])?)$/i;
@@ -701,6 +705,7 @@ function memberProfileData(member, guildData) {
     { label: '/ticket add', allowed: hasTicketCommands },
     { label: '/ticket close', allowed: hasTicketCommands },
     { label: '/punish', allowed: hasTicketPunish },
+    { label: '/unpunish', allowed: hasTicketPunish },
     { label: '+quiz', allowed: hasQuizWhitelist },
     { label: '+snipe', allowed: hasSnipe },
     { label: '+giveaway', allowed: isManager || member.roles.cache.has(ELITE_ROLE_ID) },
@@ -2044,7 +2049,7 @@ function canPunishTicketMember(member) {
 }
 
 async function handleSupportCommand(interaction) {
-  if (!interaction.isChatInputCommand() || !['ticket', 'punish'].includes(interaction.commandName)) return false;
+  if (!interaction.isChatInputCommand() || !['ticket', 'punish', 'unpunish'].includes(interaction.commandName)) return false;
   const actor = await interaction.guild.members.fetch(interaction.user.id);
   const guildData = getGuildData(interaction.guildId);
   guildData.tickets ??= {};
@@ -2073,6 +2078,23 @@ async function handleSupportCommand(interaction) {
     };
     await saveStore();
     await interaction.reply(panel('success', 'Accès aux tickets suspendu', `${target} ne peut plus ouvrir de ticket pendant **${duration.label}**.`));
+    return true;
+  }
+
+  if (interaction.commandName === 'unpunish') {
+    if (!canPunishTicketMember(actor)) {
+      await interaction.reply(panel('error', 'Accès refusé', 'Cette commande est réservée à PVCool Elite, Créateur et au propriétaire.', true));
+      return true;
+    }
+    const targetUser = interaction.options.getUser('membre', true);
+    const punishment = guildData.ticketPunishments[targetUser.id];
+    if (!punishment) {
+      await interaction.reply(panel('warning', 'Aucune sanction active', `<@${targetUser.id}> n’est pas interdit d’ouvrir des tickets.`, true));
+      return true;
+    }
+    delete guildData.ticketPunishments[targetUser.id];
+    await saveStore();
+    await interaction.reply(panel('success', 'Accès aux tickets rétabli', `<@${targetUser.id}> peut de nouveau ouvrir des tickets.`));
     return true;
   }
 
