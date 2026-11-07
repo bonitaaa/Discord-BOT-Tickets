@@ -1669,6 +1669,7 @@ async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = n
 
 function canManageTicket(member, ticket) {
   return member.id === OWNER_COMMAND_USER_ID
+    || ticketFullAccessRoleIds(member.guild).some((roleId) => member.roles.cache.has(roleId))
     || ticketStaffIds(ticket.type).some((roleId) => member.roles.cache.has(roleId));
 }
 
