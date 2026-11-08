@@ -7,11 +7,30 @@ const temporaryFile = path.join(dataDirectory, 'database.tmp.json');
 let data = { guilds: {} };
 let saveQueue = Promise.resolve();
 
+const emptyTicketStats = () => ({ created: {}, claimed: {}, ratings: {}, ratedTickets: {} });
+
+function normalizeGuild(source = {}) {
+  const ticketStats = source.ticketStats ?? emptyTicketStats();
+  return {
+    ticketPanelMessageId: source.ticketPanelMessageId ?? null,
+    tickets: source.tickets ?? {},
+    ticketStats: {
+      created: ticketStats.created ?? {},
+      claimed: ticketStats.claimed ?? {},
+      ratings: ticketStats.ratings ?? {},
+      ratedTickets: ticketStats.ratedTickets ?? {},
+    },
+    ticketPunishments: source.ticketPunishments ?? {},
+  };
+}
+
 export async function loadStore() {
   await mkdir(dataDirectory, { recursive: true });
   try {
     const parsed = JSON.parse(await readFile(dataFile, 'utf8'));
-    data = parsed?.guilds ? parsed : { guilds: {} };
+    data = parsed?.guilds
+      ? { guilds: Object.fromEntries(Object.entries(parsed.guilds).map(([id, guild]) => [id, normalizeGuild(guild)])) }
+      : { guilds: {} };
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
     await saveStore();
@@ -19,100 +38,17 @@ export async function loadStore() {
 }
 
 export function getGuildData(guildId) {
-  data.guilds[guildId] ??= {
-    whitelist: [],
-    personalRoles: {},
-    personalRoleBlockedUsers: {},
-    personalRolePanelMessageId: null,
-    personalRolePositionExemptions: [],
-    personalRoleDatabaseCleanupDone: false,
-    roleCeilingProtectedIds: [],
-    roleCeilingOwnerExemptions: [],
-    roleCeilingProtectionInitialized: false,
-    roleHolders: {},
-    dogs: {},
-    lockedNicknames: {},
-    dogWhitelist: [],
-    welcomeMessageId: null,
-    pvWhitelist: [],
-    spamWhitelist: [],
-    privateVoices: {},
-    voicePanelCleanupDone: false,
-    channelLocks: {},
-    protectedChannels: {},
-    roleBackups: {},
-    securityBlacklist: [],
-    securityForumTemplates: {},
-    commandForumTemplates: {},
-    voiceAbuseStrikes: {},
-    banAbuse: {},
-    banWhitelist: [],
-    wakeupWhitelist: [],
-    wakeupUsage: {},
-    locknameWhitelist: [],
-    quizWhitelist: [],
-    banVotes: {},
-    banJudgmentTemplateMessageId: null,
-    giveaways: {},
-    badwords: [],
-    profilePanelMessageId: null,
-    voicePanelMessageId: null,
-    ticketPanelMessageId: null,
-    tickets: {},
-    ticketStats: { created: {}, claimed: {}, ratings: {}, ratedTickets: {} },
-    ticketPunishments: {},
-    leaderboard: {},
-    candyLeaderboard: {},
-    candyFamilies: {},
-  };
-  data.guilds[guildId].whitelist ??= [];
-  data.guilds[guildId].personalRoles ??= {};
-  data.guilds[guildId].personalRoleBlockedUsers ??= {};
-  data.guilds[guildId].personalRolePanelMessageId ??= null;
-  data.guilds[guildId].personalRolePositionExemptions ??= [];
-  data.guilds[guildId].personalRoleDatabaseCleanupDone ??= false;
-  data.guilds[guildId].roleCeilingProtectedIds ??= [];
-  data.guilds[guildId].roleCeilingOwnerExemptions ??= [];
-  data.guilds[guildId].roleCeilingProtectionInitialized ??= false;
-  data.guilds[guildId].roleHolders ??= {};
-  data.guilds[guildId].dogs ??= {};
-  data.guilds[guildId].lockedNicknames ??= {};
-  data.guilds[guildId].dogWhitelist ??= [];
-  data.guilds[guildId].welcomeMessageId ??= null;
-  data.guilds[guildId].pvWhitelist ??= [];
-  data.guilds[guildId].spamWhitelist ??= [];
-  data.guilds[guildId].privateVoices ??= {};
-  data.guilds[guildId].voicePanelCleanupDone ??= false;
-  data.guilds[guildId].channelLocks ??= {};
-  data.guilds[guildId].protectedChannels ??= {};
-  data.guilds[guildId].roleBackups ??= {};
-  data.guilds[guildId].securityBlacklist ??= [];
-  data.guilds[guildId].securityForumTemplates ??= {};
-  data.guilds[guildId].commandForumTemplates ??= {};
-  data.guilds[guildId].voiceAbuseStrikes ??= {};
-  data.guilds[guildId].banAbuse ??= {};
-  data.guilds[guildId].banWhitelist ??= [];
-  data.guilds[guildId].wakeupWhitelist ??= [];
-  data.guilds[guildId].wakeupUsage ??= {};
-  data.guilds[guildId].locknameWhitelist ??= [];
-  data.guilds[guildId].quizWhitelist ??= [];
-  data.guilds[guildId].banVotes ??= {};
-  data.guilds[guildId].banJudgmentTemplateMessageId ??= null;
-  data.guilds[guildId].giveaways ??= {};
-  data.guilds[guildId].badwords ??= [];
-  data.guilds[guildId].profilePanelMessageId ??= null;
-  data.guilds[guildId].voicePanelMessageId ??= null;
-  data.guilds[guildId].ticketPanelMessageId ??= null;
-  data.guilds[guildId].tickets ??= {};
-  data.guilds[guildId].ticketStats ??= { created: {}, claimed: {}, ratings: {}, ratedTickets: {} };
-  data.guilds[guildId].ticketStats.created ??= {};
-  data.guilds[guildId].ticketStats.claimed ??= {};
-  data.guilds[guildId].ticketStats.ratings ??= {};
-  data.guilds[guildId].ticketStats.ratedTickets ??= {};
-  data.guilds[guildId].ticketPunishments ??= {};
-  data.guilds[guildId].candyLeaderboard ??= {};
-  data.guilds[guildId].candyFamilies ??= {};
-  return data.guilds[guildId];
+  data.guilds[guildId] ??= normalizeGuild();
+  const guild = data.guilds[guildId];
+  guild.ticketPanelMessageId ??= null;
+  guild.tickets ??= {};
+  guild.ticketStats ??= emptyTicketStats();
+  guild.ticketStats.created ??= {};
+  guild.ticketStats.claimed ??= {};
+  guild.ticketStats.ratings ??= {};
+  guild.ticketStats.ratedTickets ??= {};
+  guild.ticketPunishments ??= {};
+  return guild;
 }
 
 export function saveStore() {

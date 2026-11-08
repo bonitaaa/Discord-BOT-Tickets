@@ -26,15 +26,14 @@ Tikonita fournit un parcours complet pour ouvrir, prendre en charge et fermer de
 ## Installation
 
 ```bash
-git clone https://github.com/bonitaaa/tikonita.git
-cd tikonita
+git clone https://github.com/bonitaaa/Discord-BOT-Tickets.git
+cd Discord-BOT-Tickets
 npm ci
 ```
 
 Copie ensuite `.env.example` vers `.env`, puis renseigne au minimum :
 
 ```env
-BOT_MODE=support
 SUPPORT_DISCORD_TOKEN=jeton_du_bot
 ```
 
@@ -46,12 +45,18 @@ Ne publie jamais ton fichier `.env` ni le jeton de ton bot. Le fichier est déj�
 npm start
 ```
 
-En mode `support`, le bot enregistre et gère les commandes de tickets avec le compte associé à `SUPPORT_DISCORD_TOKEN`.
+Au démarrage, Tikonita enregistre et gère ses commandes avec le compte associé à `SUPPORT_DISCORD_TOKEN`.
 
 Pour vérifier la syntaxe sans démarrer Discord :
 
 ```bash
 npm run check
+```
+
+Pour exécuter les tests de persistance et de rendu :
+
+```bash
+npm test
 ```
 
 ## Configuration Discord
@@ -68,6 +73,7 @@ data/                   Données locales persistantes, non versionnées
 src/index.js            Client Discord et logique du bot
 src/ticket-card.js      Génération des cartes de tickets
 src/store.js            Persistance des données
+test/                   Tests autonomes
 .env.example            Exemple de configuration
 railpack.json           Configuration de déploiement Railway
 ```

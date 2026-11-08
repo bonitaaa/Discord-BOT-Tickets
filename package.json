@@ -5,11 +5,11 @@
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bonitaaa/tikonita.git"
+    "url": "git+https://github.com/bonitaaa/Discord-BOT-Tickets.git"
   },
-  "homepage": "https://github.com/bonitaaa/tikonita#readme",
+  "homepage": "https://github.com/bonitaaa/Discord-BOT-Tickets#readme",
   "bugs": {
-    "url": "https://github.com/bonitaaa/tikonita/issues"
+    "url": "https://github.com/bonitaaa/Discord-BOT-Tickets/issues"
   },
   "keywords": [
     "discord",
@@ -22,7 +22,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/ticket-card.js && node --check src/store.js"
+    "check": "node --check src/index.js && node --check src/ticket-card.js && node --check src/store.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20.0.0"
