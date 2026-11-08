@@ -8,6 +8,15 @@ import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { getGuildData, saveStore } from './store.js';
 
+function readOptionalAsset(path, encoding = null) {
+  try {
+    const value = readFileSync(new URL(path, import.meta.url));
+    return encoding ? value.toString(encoding) : value;
+  } catch {
+    return encoding ? '' : Buffer.alloc(0);
+  }
+}
+
 const LEADERBOARD_CHANNEL_ID = '1564992066696646807';
 const CANDY_LEADERBOARD_CHANNEL_ID = '1565775071489040394';
 const CANDY_SOURCE_CHANNEL_ID = '1564379007414181928';
@@ -42,7 +51,7 @@ const CANDY_ICON_DATA = Buffer.from(`
   </svg>
 `).toString('base64');
 const CANDY_ICON_DATA_URI = `data:image/svg+xml;base64,${CANDY_ICON_DATA}`;
-const CANDY_BUILDING_SOURCE = readFileSync(new URL('../assets/buildings-source.jpg', import.meta.url));
+const CANDY_BUILDING_SOURCE = readOptionalAsset('../assets/buildings-source.jpg');
 let candyBuildingArtworkPromise = null;
 async function getCandyBuildingArtwork() {
   candyBuildingArtworkPromise ??= Promise.all([
@@ -81,19 +90,19 @@ const CANDY_CHARACTER_DATA = Object.fromEntries(
     'knight', 'fighter', 'captain', 'mage', 'adventurer', 'inventor',
   ].map((name) => [
     name,
-    readFileSync(new URL(`../assets/candy-character-${name}.png`, import.meta.url)).toString('base64'),
+    readOptionalAsset(`../assets/candy-character-${name}.png`, 'base64'),
   ]),
 );
 const CANDY_BACKGROUND_DATA = Object.fromEntries(
   ['sunset', 'night', 'winter'].map((name) => [
     name,
-    readFileSync(new URL(`../assets/candy-background-${name}.png`, import.meta.url)).toString('base64'),
+    readOptionalAsset(`../assets/candy-background-${name}.png`, 'base64'),
   ]),
 );
 const CANDY_SHOP_ITEM_DATA = Object.fromEntries(
   ['potion', 'hat', 'skull', 'crystal'].map((name) => [
     name,
-    readFileSync(new URL(`../assets/candy-shop-${name}.png`, import.meta.url)).toString('base64'),
+    readOptionalAsset(`../assets/candy-shop-${name}.png`, 'base64'),
   ]),
 );
 const CANDY_THEMES = {

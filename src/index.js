@@ -56,8 +56,16 @@ import {
   renderTicketCard,
 } from './leaderboard.js';
 
-const CANDY_RPS_GIF = readFileSync(new URL('../assets/candy-rps.gif', import.meta.url));
-const CANDY_ROULETTE_GIF = readFileSync(new URL('../assets/candy-roulette.gif', import.meta.url));
+function readOptionalAsset(path) {
+  try {
+    return readFileSync(new URL(path, import.meta.url));
+  } catch {
+    return null;
+  }
+}
+
+const CANDY_RPS_GIF = readOptionalAsset('../assets/candy-rps.gif');
+const CANDY_ROULETTE_GIF = readOptionalAsset('../assets/candy-roulette.gif');
 const wikipediaIllustrationCache = new Map();
 const WIKIPEDIA_FALLBACK_ILLUSTRATION = {
   image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/512px-Wikipedia-logo-v2.svg.png',
