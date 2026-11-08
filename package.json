@@ -2,6 +2,22 @@
   "name": "tikonita",
   "version": "1.0.0",
   "description": "Bot Discord Tikonita pour les tickets et le support.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bonitaaa/tikonita.git"
+  },
+  "homepage": "https://github.com/bonitaaa/tikonita#readme",
+  "bugs": {
+    "url": "https://github.com/bonitaaa/tikonita/issues"
+  },
+  "keywords": [
+    "discord",
+    "discord-bot",
+    "discord-js",
+    "support",
+    "tickets"
+  ],
   "main": "src/index.js",
   "type": "module",
   "scripts": {
