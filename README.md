@@ -35,6 +35,8 @@ Copie ensuite `.env.example` vers `.env`, puis renseigne au minimum :
 
 ```env
 SUPPORT_DISCORD_TOKEN=jeton_du_bot
+TICKET_PANEL_CHANNEL_ID=identifiant_du_salon_du_panneau
+TICKET_CATEGORY_ID=identifiant_de_la_categorie_des_tickets
 ```
 
 Ne publie jamais ton fichier `.env` ni le jeton de ton bot. Le fichier est déjà exclu par `.gitignore`.
@@ -61,7 +63,7 @@ npm test
 
 ## Configuration Discord
 
-La configuration propre au serveur (salon du panneau, catégorie des tickets et rôles responsables) se trouve actuellement dans `src/index.js`. Avant un déploiement sur un autre serveur, remplace les identifiants Discord concernés par ceux de ton serveur.
+Le salon du panneau et la catégorie des tickets se configurent avec `TICKET_PANEL_CHANNEL_ID` et `TICKET_CATEGORY_ID`. Si le salon configuré n’existe plus, le bot tente de retrouver un salon textuel nommé `créer-un-ticket`, `ouvrir-un-ticket` ou `tickets`. Les identifiants des rôles responsables se trouvent actuellement dans `src/index.js` et doivent être adaptés avant un déploiement sur un autre serveur.
 
 Les données d’exécution sont enregistrées dans `data/`. Les fichiers JSON de ce dossier sont volontairement ignorés par Git afin de ne pas publier les données des membres.
 

@@ -18,8 +18,8 @@ const ELITE_ROLE_ID = '1565392656970817568';
 const PREMIUM_ROLE_ID = '1564636248499429446';
 const PLUS_ROLE_ID = '1564638261769404428';
 const BASIC_ROLE_ID = '1564636235333505126';
-const TICKET_PANEL_CHANNEL_ID = '1563907534119633019';
-const TICKET_CATEGORY_ID = '1566175178445291691';
+const TICKET_PANEL_CHANNEL_ID = process.env.TICKET_PANEL_CHANNEL_ID?.trim() || '1563907534119633019';
+const TICKET_CATEGORY_ID = process.env.TICKET_CATEGORY_ID?.trim() || '1566175178445291691';
 const TICKET_SELECT_ID = 'ticket-panel:select';
 const TICKET_CLAIM_ID = 'ticket:claim';
 const TICKET_CLOSE_ID = 'ticket:close';
@@ -142,10 +142,25 @@ async function ensureTicketPanel(guild) {
     if (!ticketChannel) return;
     await syncTicketWritePermissions(ticketChannel, guildData.tickets[channelId]).catch(console.error);
   }));
-  const channel = await guild.channels.fetch(TICKET_PANEL_CHANNEL_ID).catch(() => null);
+  const configuredChannel = await guild.channels.fetch(TICKET_PANEL_CHANNEL_ID).catch(() => null);
+  const channel = configuredChannel ?? guild.channels.cache.find((candidate) => {
+    if (!candidate?.isTextBased() || !('messages' in candidate)) return false;
+    const normalizedName = candidate.name.normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    return normalizedName.includes('creer-un-ticket')
+      || normalizedName.includes('ouvrir-un-ticket')
+      || normalizedName === 'tickets';
+  });
   if (!channel?.isTextBased() || !('messages' in channel)) {
-    console.error(`Le salon du panneau tickets ${TICKET_PANEL_CHANNEL_ID} est introuvable ou incompatible.`);
+    console.error([
+      `Le salon du panneau tickets ${TICKET_PANEL_CHANNEL_ID} est introuvable ou incompatible.`,
+      'Configure TICKET_PANEL_CHANNEL_ID avec l’identifiant d’un salon textuel accessible au bot.',
+    ].join(' '));
     return;
+  }
+  if (channel.id !== TICKET_PANEL_CHANNEL_ID) {
+    console.warn(`Salon du panneau introuvable : utilisation automatique de #${channel.name} (${channel.id}).`);
   }
   let message = guildData.ticketPanelMessageId
     ? await channel.messages.fetch(guildData.ticketPanelMessageId).catch(() => null)
