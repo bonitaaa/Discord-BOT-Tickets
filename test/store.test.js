@@ -11,8 +11,8 @@ test('le stockage persiste uniquement les données nécessaires aux tickets', as
   await writeFile(path.join(directory, 'database.json'), JSON.stringify({
     guilds: {
       'guild-test': {
-        dogs: { obsolete: true },
-        candyLeaderboard: { obsolete: true },
+        legacyFeature: { obsolete: true },
+        unrelatedData: { obsolete: true },
         tickets: { existing: { ownerId: 'member', createdAt: 1 } },
         ticketStats: { created: { member: 1 }, claimed: {}, ratings: {}, ratedTickets: {} },
         ticketPunishments: {},
