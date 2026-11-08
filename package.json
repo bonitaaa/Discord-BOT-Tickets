@@ -21,9 +21,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/deploy-commands.js && node src/index.js",
-    "deploy": "node src/deploy-commands.js",
-    "check": "node --check src/index.js && node --check src/deploy-commands.js && node --check src/leaderboard.js && node --check src/store.js && node --check src/commands.js"
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/ticket-card.js && node --check src/store.js"
   },
   "engines": {
     "node": ">=20.0.0"

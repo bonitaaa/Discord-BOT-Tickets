@@ -66,9 +66,8 @@ Les données d’exécution sont enregistrées dans `data/`. Les fichiers JSON d
 assets/                 Images utilisées par les cartes de tickets
 data/                   Données locales persistantes, non versionnées
 src/index.js            Client Discord et logique du bot
-src/leaderboard.js      Génération des visuels
+src/ticket-card.js      Génération des cartes de tickets
 src/store.js            Persistance des données
-src/commands.js         Commandes du mode principal historique
 .env.example            Exemple de configuration
 railpack.json           Configuration de déploiement Railway
 ```

@@ -35,8 +35,6 @@ import {
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { getGuildData, loadStore, saveStore } from './store.js';
-import { buildCommands } from './commands.js';
-import { HALLOWEEN_TRIVIA } from './trivia-questions.js';
 import {
   awardCandies,
   awardCandiesBatch,
@@ -54,7 +52,7 @@ import {
   renderFamilyTreeImage,
   renderLoveCompatibilityImage,
   renderTicketCard,
-} from './leaderboard.js';
+} from './ticket-card.js';
 
 function readOptionalAsset(path) {
   try {
