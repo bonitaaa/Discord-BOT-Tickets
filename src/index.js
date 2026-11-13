@@ -59,10 +59,10 @@ const SUPPORT_COMMANDS = [
     .addSubcommand((command) => command.setName('add').setDescription('Ajouter un membre au ticket')
       .addUserOption((option) => option.setName('membre').setDescription('Membre à ajouter').setRequired(true)))
     .addSubcommand((command) => command.setName('close').setDescription('Fermer le ticket dans quelques secondes')),
-  new SlashCommandBuilder().setName('punish').setDescription('Interdire temporairement les tickets à un membre')
+  new SlashCommandBuilder().setName('ticket-punish').setDescription('Interdire temporairement les tickets à un membre')
     .addUserOption((option) => option.setName('membre').setDescription('Membre à sanctionner').setRequired(true))
     .addStringOption((option) => option.setName('duree').setDescription('Exemples : 30m, 2h ou 3j').setRequired(true)),
-  new SlashCommandBuilder().setName('unpunish').setDescription('Rétablir immédiatement l’accès aux tickets')
+  new SlashCommandBuilder().setName('ticket-unpunish').setDescription('Rétablir immédiatement l’accès aux tickets')
     .addUserOption((option) => option.setName('membre').setDescription('Membre à réautoriser').setRequired(true)),
 ].map((command) => command.toJSON());
 
@@ -631,13 +631,13 @@ function canPunishTicketMember(member) {
 }
 
 async function handleSupportCommand(interaction) {
-  if (!interaction.isChatInputCommand() || !['ticket', 'punish', 'unpunish'].includes(interaction.commandName)) return false;
+  if (!interaction.isChatInputCommand() || !['ticket', 'ticket-punish', 'ticket-unpunish'].includes(interaction.commandName)) return false;
   const actor = await interaction.guild.members.fetch(interaction.user.id);
   const guildData = getGuildData(interaction.guildId);
   guildData.tickets ??= {};
   guildData.ticketPunishments ??= {};
 
-  if (interaction.commandName === 'punish') {
+  if (interaction.commandName === 'ticket-punish') {
     if (!canPunishTicketMember(actor)) {
       await interaction.reply(panel('error', 'Accès refusé', 'Cette commande est réservée à PVCool Elite, Créateur et au propriétaire.', true));
       return true;
@@ -663,7 +663,7 @@ async function handleSupportCommand(interaction) {
     return true;
   }
 
-  if (interaction.commandName === 'unpunish') {
+  if (interaction.commandName === 'ticket-unpunish') {
     if (!canPunishTicketMember(actor)) {
       await interaction.reply(panel('error', 'Accès refusé', 'Cette commande est réservée à PVCool Elite, Créateur et au propriétaire.', true));
       return true;
