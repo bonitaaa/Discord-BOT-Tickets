@@ -2,9 +2,8 @@ import 'dotenv/config';
 import {
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, ContainerBuilder,
   EmbedBuilder, Events, GatewayIntentBits, MediaGalleryBuilder, MediaGalleryItemBuilder,
-  MessageFlags, Partials, PermissionFlagsBits, SectionBuilder, SeparatorBuilder,
+  MessageFlags, Partials, PermissionFlagsBits, SeparatorBuilder,
   SeparatorSpacingSize, SlashCommandBuilder, StringSelectMenuBuilder, TextDisplayBuilder,
-  ThumbnailBuilder,
 } from 'discord.js';
 import { getGuildData, loadStore, saveStore } from './store.js';
 import { renderTicketCard } from './ticket-card.js';
@@ -86,7 +85,7 @@ const TICKET_TYPES = {
   },
 };
 
-function ticketPanelMessage(guild) {
+function ticketPanelMessage() {
   const select = new StringSelectMenuBuilder()
     .setCustomId(TICKET_SELECT_ID)
     .setPlaceholder('Quel est le sujet de ta demande ?')
@@ -98,39 +97,19 @@ function ticketPanelMessage(guild) {
       description: ticket.description,
       emoji: ticket.emoji,
     })));
-  const header = new SectionBuilder()
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      '-# PVCOOL · CENTRE D’ASSISTANCE',
-      '## 🎫 Comment pouvons-nous t’aider ?',
-      'Choisis le sujet correspondant à ta demande. Un salon privé sera créé avec la bonne équipe.',
-    ].join('\n')))
-    .setThumbnailAccessory(new ThumbnailBuilder().setURL(guild.client.user.displayAvatarURL({ size: 256 })));
   const container = new ContainerBuilder()
     .setAccentColor(0x8B5CF6)
-    .addSectionComponents(header)
-    .addSeparatorComponents(
-      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large),
-    )
-    .addTextDisplayComponents(
-      new TextDisplayBuilder().setContent([
-        '### ❓ Besoin d’aide',
-        'Une question, un problème ou besoin d’un accompagnement sur le serveur.',
-        '-# Équipe autorisée · Premium · Elite · Prestige · Créateur',
-        '',
-        '### 👑 Contacter un owner',
-        'Une demande privée ou importante destinée à la direction de PVCool.',
-        '-# Équipe autorisée · Prestige · Créateur',
-      ].join('\n')),
-    )
-    .addSeparatorComponents(
-      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large),
-    )
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Sélectionne ton type de ticket**'))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      '## 🎫 Support PVCool',
+      'Choisis ton besoin pour ouvrir un salon privé.',
+      '',
+      '**❓ Besoin d’aide** — Premium, Elite, Prestige et Créateur',
+      '**👑 Contacter un owner** — Prestige et Créateur',
+    ].join('\n')))
     .addActionRowComponents(new ActionRowBuilder().addComponents(select));
-  container.addTextDisplayComponents(new TextDisplayBuilder().setContent([
-    '-# 🔒 Conversation privée · un seul ticket ouvert par membre',
-    '-# Explique clairement ta demande après l’ouverture pour recevoir une réponse plus rapidement.',
-  ].join('\n')));
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+    '-# 🔒 Conversation privée · un ticket ouvert par membre',
+  ));
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
