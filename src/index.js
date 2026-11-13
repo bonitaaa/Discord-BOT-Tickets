@@ -102,14 +102,8 @@ function ticketPanelMessage() {
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
       '## 🎫 Support PVCool',
       'Choisis ton besoin pour ouvrir un salon privé.',
-      '',
-      '**❓ Besoin d’aide** — Premium, Elite, Prestige et Créateur',
-      '**👑 Contacter un owner** — Prestige et Créateur',
     ].join('\n')))
     .addActionRowComponents(new ActionRowBuilder().addComponents(select));
-  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-    '-# 🔒 Conversation privée · un ticket ouvert par membre',
-  ));
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
