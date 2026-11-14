@@ -13,6 +13,11 @@ if (!token) throw new Error('SUPPORT_DISCORD_TOKEN est manquant.');
 
 const OWNER_COMMAND_USER_ID = '317270244815011840';
 const CREATOR_ROLE_ID = '1565034303560355870';
+const TICKET_SUPERVISOR_ROLE_IDS = [
+  CREATOR_ROLE_ID,
+  '1569888545492172941',
+  '1568125280755912725',
+];
 const ELITE_ROLE_ID = '1565392656970817568';
 const PREMIUM_ROLE_ID = '1564636248499429446';
 const PLUS_ROLE_ID = '1564638261769404428';
@@ -25,13 +30,6 @@ const TICKET_CLOSE_ID = 'ticket:close';
 const TICKET_RELEASE_ID = 'ticket:release';
 const TICKET_TRANSCRIPT_ID = 'ticket:transcript';
 const MAX_TIMEOUT_MS = 28 * 24 * 60 * 60 * 1000;
-
-function prestigeRoleForGuild(guild) {
-  return guild?.roles.cache.find((role) => {
-    const name = role.name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    return name === 'prestige' || name === 'pvcool prestige' || name.endsWith(' prestige');
-  }) ?? null;
-}
 
 function panel(kind, title, description, ephemeral = false) {
   const colors = { success: 0x57F287, warning: 0xFEE75C, error: 0xED4245, info: 0x5865F2 };
@@ -171,9 +169,8 @@ function ticketStaffIds(type) {
   return TICKET_TYPES[type]?.roleIds ?? [];
 }
 
-const TICKET_FULL_ACCESS_ROLE_IDS = [CREATOR_ROLE_ID];
-function ticketFullAccessRoleIds(guild) {
-  return [...TICKET_FULL_ACCESS_ROLE_IDS, prestigeRoleForGuild(guild)?.id].filter(Boolean);
+function ticketFullAccessRoleIds() {
+  return TICKET_SUPERVISOR_ROLE_IDS;
 }
 const TICKET_READ_PERMISSIONS = [
   PermissionFlagsBits.ViewChannel,
@@ -194,7 +191,7 @@ async function deleteTicketClaimMessage(channel, ticket) {
 }
 
 async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = null) {
-  const elevatedRoles = new Set(ticketFullAccessRoleIds(channel.guild));
+  const elevatedRoles = new Set(ticketFullAccessRoleIds());
   const visibleStaffRoles = new Set([...ticketStaffIds(ticket.type), ...elevatedRoles]);
   const knownTicketRoles = new Set([
     CREATOR_ROLE_ID,
@@ -202,7 +199,7 @@ async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = n
     PREMIUM_ROLE_ID,
     PLUS_ROLE_ID,
     BASIC_ROLE_ID,
-    prestigeRoleForGuild(channel.guild)?.id,
+    ...TICKET_SUPERVISOR_ROLE_IDS,
   ].filter(Boolean));
 
   for (const roleId of knownTicketRoles) {
@@ -217,12 +214,13 @@ async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = n
   }
 
   for (const roleId of visibleStaffRoles) {
+    const canWrite = !ticket.claimedBy || elevatedRoles.has(roleId);
     await channel.permissionOverwrites.edit(roleId, {
       ViewChannel: true,
       ReadMessageHistory: true,
-      SendMessages: elevatedRoles.has(roleId),
-      AttachFiles: elevatedRoles.has(roleId),
-      EmbedLinks: elevatedRoles.has(roleId),
+      SendMessages: canWrite,
+      AttachFiles: canWrite,
+      EmbedLinks: canWrite,
     }, { reason: 'Synchronisation des accès du ticket' });
   }
 
@@ -246,11 +244,44 @@ async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = n
       EmbedLinks: true,
     }, { reason: 'Responsable actuel du ticket' });
   }
+
+  const protectedWriterIds = new Set([
+    ticket.ownerId,
+    ticket.claimedBy,
+    channel.client.user.id,
+    ...elevatedRoles,
+  ].filter(Boolean));
+  if (ticket.claimedBy) {
+    const restrictedWriterIds = new Set(ticket.restrictedWriterIds ?? []);
+    for (const overwrite of channel.permissionOverwrites.cache.values()) {
+      if (protectedWriterIds.has(overwrite.id) || overwrite.id === channel.guild.roles.everyone.id) continue;
+      if (visibleStaffRoles.has(overwrite.id)) continue;
+      if (overwrite.allow.has(PermissionFlagsBits.SendMessages)) restrictedWriterIds.add(overwrite.id);
+    }
+    ticket.restrictedWriterIds = [...restrictedWriterIds];
+    for (const overwriteId of restrictedWriterIds) {
+      if (protectedWriterIds.has(overwriteId)) continue;
+      await channel.permissionOverwrites.edit(overwriteId, {
+        SendMessages: false,
+        AttachFiles: false,
+        EmbedLinks: false,
+      }, { reason: 'Écriture réservée au demandeur et au responsable du ticket' });
+    }
+  } else if (ticket.restrictedWriterIds?.length) {
+    for (const overwriteId of ticket.restrictedWriterIds) {
+      await channel.permissionOverwrites.edit(overwriteId, {
+        SendMessages: true,
+        AttachFiles: true,
+        EmbedLinks: true,
+      }, { reason: 'Ticket libéré : restauration des accès précédents' });
+    }
+    delete ticket.restrictedWriterIds;
+  }
 }
 
 function canManageTicket(member, ticket) {
   return member.id === OWNER_COMMAND_USER_ID
-    || ticketFullAccessRoleIds(member.guild).some((roleId) => member.roles.cache.has(roleId))
+    || ticketFullAccessRoleIds().some((roleId) => member.roles.cache.has(roleId))
     || ticketStaffIds(ticket.type).some((roleId) => member.roles.cache.has(roleId));
 }
 
@@ -495,10 +526,10 @@ async function handleTicketSelect(interaction) {
     },
     ...type.roleIds.map((roleId) => ({
       id: roleId,
-      allow: ticketFullAccessRoleIds(interaction.guild).includes(roleId) ? TICKET_WRITE_PERMISSIONS : TICKET_READ_PERMISSIONS,
+      allow: TICKET_WRITE_PERMISSIONS,
     })),
   ];
-  for (const roleId of ticketFullAccessRoleIds(interaction.guild)) {
+  for (const roleId of ticketFullAccessRoleIds()) {
     if (!permissionOverwrites.some((overwrite) => overwrite.id === roleId)) {
       permissionOverwrites.push({ id: roleId, allow: TICKET_WRITE_PERMISSIONS });
     }
