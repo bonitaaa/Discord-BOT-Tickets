@@ -78,8 +78,16 @@ const TICKET_TYPES = {
     emoji: '👑',
     description: 'Échanger en privé avec la direction.',
     channelPrefix: 'owner',
-    roleIds: [],
+    roleIds: [CREATOR_ROLE_ID],
     color: 0xED4245,
+  },
+  whitelist: {
+    label: 'Demander une whitelist',
+    emoji: '📋',
+    description: 'Faire une demande d’accès à une fonctionnalité.',
+    channelPrefix: 'whitelist',
+    roleIds: [...TICKET_SUPERVISOR_ROLE_IDS],
+    color: 0x57F287,
   },
 };
 
@@ -90,7 +98,7 @@ function ticketPanelMessage() {
         .setCustomId(`${TICKET_SELECT_ID}:${value}`)
         .setLabel(ticket.label)
         .setEmoji(ticket.emoji)
-        .setStyle(index === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary)
+        .setStyle(value === 'help' ? ButtonStyle.Primary : (value === 'whitelist' ? ButtonStyle.Success : ButtonStyle.Secondary))
     )),
   );
   const container = new ContainerBuilder()
@@ -167,8 +175,8 @@ function ticketStaffIds(type) {
   return TICKET_TYPES[type]?.roleIds ?? [];
 }
 
-function ticketFullAccessRoleIds() {
-  return TICKET_SUPERVISOR_ROLE_IDS;
+function ticketFullAccessRoleIds(type) {
+  return type === 'owner' ? [CREATOR_ROLE_ID] : TICKET_SUPERVISOR_ROLE_IDS;
 }
 const TICKET_READ_PERMISSIONS = [
   PermissionFlagsBits.ViewChannel,
@@ -189,7 +197,7 @@ async function deleteTicketClaimMessage(channel, ticket) {
 }
 
 async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = null) {
-  const elevatedRoles = new Set(ticketFullAccessRoleIds());
+  const elevatedRoles = new Set(ticketFullAccessRoleIds(ticket.type));
   const visibleStaffRoles = new Set([...ticketStaffIds(ticket.type), ...elevatedRoles]);
   const knownTicketRoles = new Set([
     CREATOR_ROLE_ID,
@@ -279,7 +287,7 @@ async function syncTicketWritePermissions(channel, ticket, previousClaimedBy = n
 
 function canManageTicket(member, ticket) {
   return member.id === OWNER_COMMAND_USER_ID
-    || ticketFullAccessRoleIds().some((roleId) => member.roles.cache.has(roleId))
+    || ticketFullAccessRoleIds(ticket.type).some((roleId) => member.roles.cache.has(roleId))
     || ticketStaffIds(ticket.type).some((roleId) => member.roles.cache.has(roleId));
 }
 
@@ -531,7 +539,7 @@ async function handleTicketSelect(interaction) {
       allow: TICKET_WRITE_PERMISSIONS,
     })),
   ];
-  for (const roleId of ticketFullAccessRoleIds()) {
+  for (const roleId of ticketFullAccessRoleIds(typeKey)) {
     if (!permissionOverwrites.some((overwrite) => overwrite.id === roleId)) {
       permissionOverwrites.push({ id: roleId, allow: TICKET_WRITE_PERMISSIONS });
     }
