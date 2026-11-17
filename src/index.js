@@ -84,24 +84,22 @@ const TICKET_TYPES = {
 };
 
 function ticketPanelMessage() {
-  const select = new StringSelectMenuBuilder()
-    .setCustomId(TICKET_SELECT_ID)
-    .setPlaceholder('Quel est le sujet de ta demande ?')
-    .setMinValues(1)
-    .setMaxValues(1)
-    .addOptions(...Object.entries(TICKET_TYPES).map(([value, ticket]) => ({
-      value,
-      label: ticket.label,
-      description: ticket.description,
-      emoji: ticket.emoji,
-    })));
+  const buttons = new ActionRowBuilder().addComponents(
+    ...Object.entries(TICKET_TYPES).map(([value, ticket], index) => (
+      new ButtonBuilder()
+        .setCustomId(`${TICKET_SELECT_ID}:${value}`)
+        .setLabel(ticket.label)
+        .setEmoji(ticket.emoji)
+        .setStyle(index === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary)
+    )),
+  );
   const container = new ContainerBuilder()
     .setAccentColor(0x8B5CF6)
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
       '## 🎫 Support PVCool',
-      'Choisis ton besoin pour ouvrir un salon privé.',
+      '-# Choisis directement le type de demande à ouvrir.',
     ].join('\n')))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(select));
+    .addActionRowComponents(buttons);
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
@@ -487,8 +485,12 @@ async function handleTicketRating(interaction) {
 }
 
 async function handleTicketSelect(interaction) {
-  if (!interaction.isStringSelectMenu() || interaction.customId !== TICKET_SELECT_ID) return false;
-  const typeKey = interaction.values[0];
+  const isLegacySelect = interaction.isStringSelectMenu() && interaction.customId === TICKET_SELECT_ID;
+  const isTicketButton = interaction.isButton() && interaction.customId.startsWith(`${TICKET_SELECT_ID}:`);
+  if (!isLegacySelect && !isTicketButton) return false;
+  const typeKey = isLegacySelect
+    ? interaction.values[0]
+    : interaction.customId.slice(TICKET_SELECT_ID.length + 1);
   const type = TICKET_TYPES[typeKey];
   if (!type) return false;
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -777,7 +779,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (await handleTicketRating(interaction)) return;
     if (!interaction.inGuild()) return;
-    if (interaction.isStringSelectMenu() && await handleTicketSelect(interaction)) return;
+    if ((interaction.isStringSelectMenu() || interaction.isButton())
+      && await handleTicketSelect(interaction)) return;
     if (interaction.isButton() && await handleTicketButton(interaction)) return;
     if (interaction.isChatInputCommand()) await handleSupportCommand(interaction);
   } catch (error) {
