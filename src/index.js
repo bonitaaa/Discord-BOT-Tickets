@@ -92,21 +92,30 @@ const TICKET_TYPES = {
 };
 
 function ticketPanelMessage() {
+  const buttonLabels = {
+    help: 'Aide',
+    owner: 'Owner',
+    whitelist: 'Whitelist',
+  };
   const buttons = new ActionRowBuilder().addComponents(
-    ...Object.entries(TICKET_TYPES).map(([value, ticket], index) => (
+    ...Object.entries(TICKET_TYPES).map(([value, ticket]) => (
       new ButtonBuilder()
         .setCustomId(`${TICKET_SELECT_ID}:${value}`)
-        .setLabel(ticket.label)
+        .setLabel(buttonLabels[value] ?? ticket.label)
         .setEmoji(ticket.emoji)
-        .setStyle(value === 'help' ? ButtonStyle.Primary : (value === 'whitelist' ? ButtonStyle.Success : ButtonStyle.Secondary))
+        .setStyle(value === 'help' ? ButtonStyle.Primary : ButtonStyle.Secondary)
     )),
   );
   const container = new ContainerBuilder()
     .setAccentColor(0x8B5CF6)
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      '## 🎫 Support PVCool',
-      '-# Choisis directement le type de demande à ouvrir.',
+      '-# PVCool · CENTRE D’ASSISTANCE',
+      '## Ouvrir un ticket',
+      '-# Choisis le service concerné. La conversation restera privée.',
     ].join('\n')))
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+    )
     .addActionRowComponents(buttons);
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
