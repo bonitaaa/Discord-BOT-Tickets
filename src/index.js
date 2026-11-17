@@ -93,30 +93,34 @@ const TICKET_TYPES = {
 
 function ticketPanelMessage() {
   const buttonLabels = {
-    help: 'Aide',
-    owner: 'Owner',
-    whitelist: 'Whitelist',
+    help: 'Besoin d’aide',
+    whitelist: 'Demande de whitelist',
+    owner: 'Contacter la direction',
   };
+  const displayOrder = ['help', 'whitelist', 'owner'];
   const buttons = new ActionRowBuilder().addComponents(
-    ...Object.entries(TICKET_TYPES).map(([value, ticket]) => (
-      new ButtonBuilder()
+    ...displayOrder.map((value) => {
+      const ticket = TICKET_TYPES[value];
+      return new ButtonBuilder()
         .setCustomId(`${TICKET_SELECT_ID}:${value}`)
-        .setLabel(buttonLabels[value] ?? ticket.label)
+        .setLabel(buttonLabels[value])
         .setEmoji(ticket.emoji)
-        .setStyle(value === 'help' ? ButtonStyle.Primary : ButtonStyle.Secondary)
-    )),
+        .setStyle(value === 'help' ? ButtonStyle.Primary : ButtonStyle.Secondary);
+    }),
   );
   const container = new ContainerBuilder()
     .setAccentColor(0x8B5CF6)
     .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-      '-# PVCool · CENTRE D’ASSISTANCE',
-      '## Ouvrir un ticket',
-      '-# Choisis le service concerné. La conversation restera privée.',
+      '## 🎫 Centre d’assistance',
+      '-# Ouvre un espace privé avec l’équipe adaptée à ta demande.',
     ].join('\n')))
     .addSeparatorComponents(
       new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
     )
-    .addActionRowComponents(buttons);
+    .addActionRowComponents(buttons)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('-# Un seul ticket peut être ouvert à la fois.'),
+    );
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
